@@ -1,0 +1,14 @@
+Create the environment from the argos.yml file.
+
+    conda env create -f argos.yml
+    
+Then set up a jupyter notebook kernel from the environment. If
+your environment is called something else, you would run "conda
+activate [env_name]" instead of "conda activate argos."
+
+    conda activate argos
+    python -m ipykernel install --user --name argos
+    
+Then after shutting down the kernel if you had the notebook 
+already running, open up the plotting.ipynb notebook. You should
+be able to select the "argos" kernel via "Kernel > Change Kernel."
