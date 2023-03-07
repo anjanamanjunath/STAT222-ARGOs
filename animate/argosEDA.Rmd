@@ -1,0 +1,90 @@
+---
+title: "Untitled"
+author: "Arm Wonghirundacha"
+date: "2023-02-28"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(rnaturalearth)
+library(gganimate)
+library(tidyverse)
+library(lubridate)
+library(gifski)
+library(zoo)
+```
+
+```{r}
+#bg = ne_countries(scale = "medium", continent = 'asia', returnclass = "sf")
+japan <- ne_countries(country = "japan", returnclass = "sf")
+```
+
+```{r}
+data <- read.csv("~/Desktop/argos/PR_PF_2903654.csv", header=TRUE)
+```
+
+```{r}
+data <- data %>% mutate(date = substr(DATE..YYYY.MM.DDTHH.MI.SSZ., 1, 10))
+```
+
+```{r}
+data <- data %>% mutate(date = as.Date(date))
+```
+
+```{r}
+names(data)
+```
+
+
+
+```{r}
+df_ave = data %>%
+  group_by(date) %>%
+  summarise(
+    lat = mean(LATITUDE..degree_north., na.rm = TRUE), 
+    lon = mean(LONGITUDE..degree_east., na.rm = TRUE), 
+    temp = mean(TEMP..degree_Celsius., na.rm = TRUE))
+
+df_ave <- df_ave %>% mutate(date = as.Date(date))
+```
+
+```{r}
+#ideal = expand_grid(date = seq.Date(from = min(df_ave$date), to = max(df_ave$date), by = 1))
+
+#df_ave = left_join(ideal,df_ave)
+
+#df_ave <- df_ave %>% mutate(lat = na.approx(lat))  %>% mutate(lon = na.approx(lon))
+```
+
+
+```{r}
+p = ggplot()+
+  geom_sf(data = japan)+
+  coord_sf(xlim = range(130, 155, na.rm = TRUE), 
+           ylim = range(29, 46, na.rm = TRUE), 
+           expand = FALSE)+
+  geom_path(data = df_ave, 
+            aes(x=lon,y=lat, color=temp, group=1), 
+            alpha = 0.3)+
+  geom_point(data = df_ave, 
+             aes(x=lon,y=lat, fill=temp),
+             alpha = 0.7, shape=21, size = 2)+
+  scale_size_continuous(range = c(0.1,10))+
+  theme_dark()
+p
+```
+
+```{r}
+anim = p + 
+  transition_reveal(along = date)+
+  ease_aes('linear')+
+  ggtitle("Date: {frame_along}")
+
+animate(anim, nframes = 168, fps = 10, renderer = gifski_renderer())
+anim_save("output.gif")
+```
+
+
+

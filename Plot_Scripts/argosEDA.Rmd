@@ -86,5 +86,99 @@ animate(anim, nframes = 168, fps = 10, renderer = gifski_renderer())
 anim_save("output.gif")
 ```
 
+```{r}
+o <- read.csv("~/Desktop/argos/new/PR_PF_4903249.csv", header=TRUE)
+n <- read.csv("~/Desktop/argos/new/PR_PF_4903354.csv", header=TRUE)
+e <- read.csv("~/Desktop/argos/new/PR_PF_4901716.csv", header=TRUE)
+p <- read.csv("~/Desktop/argos/new/PR_PF_4903240.csv", header=TRUE)
+```
+
+```{r}
+o <- o %>% 
+  mutate(date = substr(DATE..YYYY.MM.DDTHH.MI.SSZ., 1, 10)) %>%
+  mutate(date = as.Date(date))
+
+n <- n %>% 
+  mutate(date = substr(DATE..YYYY.MM.DDTHH.MI.SSZ., 1, 10)) %>%
+  mutate(date = as.Date(date))
+
+e <- e %>% 
+  mutate(date = substr(DATE..YYYY.MM.DDTHH.MI.SSZ., 1, 10)) %>%
+  mutate(date = as.Date(date))
+
+p <- p %>% 
+  mutate(date = substr(DATE..YYYY.MM.DDTHH.MI.SSZ., 1, 10)) %>%
+  mutate(date = as.Date(date))
+```
+
+```{r}
+o <- o %>%
+  group_by(date) %>%
+  summarise(
+    lat = mean(LATITUDE..degree_north., na.rm = TRUE), 
+    lon = mean(LONGITUDE..degree_east., na.rm = TRUE), 
+    temp = mean(TEMP..degree_Celsius., na.rm = TRUE)) %>%
+  mutate(float = "o")
+
+n <- n %>%
+  group_by(date) %>%
+  summarise(
+    lat = mean(LATITUDE..degree_north., na.rm = TRUE), 
+    lon = mean(LONGITUDE..degree_east., na.rm = TRUE), 
+    temp = mean(TEMP..degree_Celsius., na.rm = TRUE)) %>%
+  mutate(float = "n")
+
+e <- e %>%
+  group_by(date) %>%
+  summarise(
+    lat = mean(LATITUDE..degree_north., na.rm = TRUE), 
+    lon = mean(LONGITUDE..degree_east., na.rm = TRUE), 
+    temp = mean(TEMP..degree_Celsius., na.rm = TRUE)) %>%
+  mutate(float = "e")
+
+p <- p %>%
+  group_by(date) %>%
+  summarise(
+    lat = mean(LATITUDE..degree_north., na.rm = TRUE), 
+    lon = mean(LONGITUDE..degree_east., na.rm = TRUE), 
+    temp = mean(TEMP..degree_Celsius., na.rm = TRUE)) %>%
+  mutate(float = "p")
+```
+
+```{r}
+total <- rbind(rbind(rbind(o, n), e), p)
+```
+
+```{r, fig.width=10, fig.height=10}
+bg = ne_countries(scale = "medium", continent = 'north america', returnclass = "sf")
+
+p = ggplot()+
+  geom_sf(data = bg)+
+  coord_sf(xlim = range(-100, -75, na.rm = TRUE), 
+           ylim = range(10, 35, na.rm = TRUE), 
+           expand = FALSE)+
+  geom_path(data = total, 
+            aes(x=lon,y=lat, color=temp, group=float), 
+            alpha = 0.3)+
+  geom_point(data = total, 
+             aes(x=lon,y=lat, fill=temp, group=float),
+             alpha = 0.7, shape=21, size = 2)+
+  scale_fill_viridis_c(option = "inferno")+
+  scale_color_viridis_c(option = "inferno")+
+  scale_size_continuous(range = c(0.1,10))+
+  theme_dark()
+p
+```
+
+```{r, fig.width=10, fig.height=10}
+anim = p + 
+  transition_reveal(along = date)+
+  ease_aes('linear')+
+  ggtitle("Date: {frame_along}")
+
+animate(anim, nframes = 289, fps = 10, renderer = gifski_renderer())
+anim_save("output2.gif")
+```
+
 
 
