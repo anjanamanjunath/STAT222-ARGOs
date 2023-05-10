@@ -10,22 +10,26 @@ class GaussianProcess:
 
     def __init__(self, hp=[1], kernel_type='rbf'):
         self.scale = hp[0]
-        self.nu = hp[1]
+        if kernel_type == 'Matern':
+            self.nu = hp[1]
         self.kernel_type = kernel_type
 
     def kernel(self, X, y=None):
         X = np.atleast_2d(X) 
+        
 
-        if self.kernel_type == 'RBF': 
+        if self.kernel_type == 'rbf': 
+
             if y is None:
 
-                d = pdist(X, metric = lambda u, v : vincenty(u,v)**2) / self.scale**2 + pdist(
+                d = pdist(X, metric = lambda u, v : vincenty.vincenty(u,v)**2) / (1e6)**2 + pdist(
                     X/self.scale, metric = 'sqeuclidean')
+
             
             else: 
-                d = cdist(X, y, metric = lambda u, v : vincenty(u,v)**2) / self.scale**2 + cdist(
+                d = cdist(X, y, metric = lambda u, v : vincenty.vincenty(u,v)**2) / (1e6)**2 + cdist(
                     X/self.scale, y/self.scale, metric = 'sqeuclidean')
-
+                
             K = np.exp(-0.5*d)
             K = squareform(K)
             np.fill_diagonal(K, 1)
@@ -33,12 +37,12 @@ class GaussianProcess:
         if self.kernel_type == 'Matern':
 
             if y is None: 
-                d = pdist(X, metric = lambda u, v : vincenty(u,v)**2) / self.scale**2 + pdist(
+                d = pdist(X, metric = lambda u, v : vincenty.vincenty(u,v)**2) / (1e6)**2 + pdist(
                     X/self.scale, metric = 'euclidean')
     
             else: 
                 
-                d = cdist(X, y, metric = lambda u, v : vincenty(u,v)**2) / self.scale**2 + cdist(
+                d = cdist(X, y, metric = lambda u, v : vincenty.vincenty(u,v)**2) / (1e6)**2 + cdist(
                     X/self.scale, y/self.scale, metric = 'euclidean')
                 
             K = d
@@ -57,13 +61,13 @@ class GaussianProcess:
             else : 
                 K = np.zeros(np.shape(X)[0], np.shape(y)[0])
 
-            return K 
+        return K 
 
     def fit(self, X, y):
         K = GaussianProcess.kernel(self, X)
         lower=True
 
-        L = cholesky(self.kernel_, lower=lower)
+        L = cholesky(K, lower=lower)
         self.alpha_ = cho_solve((L, lower), y)
         self.train_X_ = X
         self.L_ = L 
@@ -76,3 +80,6 @@ class GaussianProcess:
         v = cho_solve((self.L_, lower), Kstar.T) 
         y_cov = GaussianProcess.kernel(Xstar) - Kstar.dot(v)
         return y_bar, y_cov
+    
+    # account for coastlines
+
